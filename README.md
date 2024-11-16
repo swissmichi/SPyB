@@ -1,2 +1,3 @@
 # SPyB
--# Simple Python Browser
+
+**S**imple **Py**thon **B**rowser
