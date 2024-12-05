@@ -1,0 +1,14 @@
+{ 
+        /*
+        Logger Settings
+        */
+        "terminal_logger_level": "INFO", // Sets the minimum logger level in terminal output, Default: INFO; Options: DEBUG, INFO, WARN, ERROR, CRITICAL
+        "file_logger_level": "DEBUG", // Sets the minimum logger level in file output, Default: DEBUG; Options: DEBUG, INFO, WARN, ERROR, CRITICAL
+        "max_log_size":  1048576, // Sets the maximum size of logfile.log in Bytes, Default: 1048576
+        "max_log_backups": 10, // Sets the maximum amount of back up logfiles, Default: 10
+
+        /*
+        Application Settings
+        */
+        "side_bar_size": 30 // Sets the size of the Side Bar, Default: 30
+}
