@@ -1,3 +1,4 @@
 SPyBENV
 **/__pycache__/
 etc/logfile.log
+.vscode
