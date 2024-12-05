@@ -17,16 +17,9 @@
 '''
 import fetcher
 import json
-from html.parser import HTMLParser
 import colorama
 from colorama import Fore, Back
+from html.parser import HTMLParser
 colorama.just_fix_windows_console()
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG,  format="%(asctime)s - %(levelname)s - %(message)s")
-
-class parse(HTMLParser):
-        def __init__(self):
-                super().__init__()
-                self.reset()
-        
- 
+logging.basicConfig(LOG_FILENAME = "../etc/logfile.log", level=logging.DEBUG,  format="%(asctime)s - %(levelname)s - %(message)s")
