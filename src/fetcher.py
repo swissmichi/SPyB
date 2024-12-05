@@ -1,9 +1,30 @@
+'''
+    This Script is part of SPyB.
+    Copyright (C) 2024  Stepan Khristolyubov
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+'''
+
+
 import requests
 import re
 import logging
+import json
 import socket
 import colorama
 from colorama import Fore, Back
+import tui
 colorama.just_fix_windows_console()
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG,  format="%(asctime)s - %(levelname)s - %(message)s")
@@ -36,7 +57,8 @@ def getHost(url):
 
 def fetch(url, host, verify = True):
         headers = {"user-agent" : "SPyB/0.1", 
-                   "host" : host
+                   "host" : host,
+                   "Cache-control": "max-age=180, public}"
         }
         try:
                 response = requests.get(url, headers = headers, verify=verify)
@@ -73,8 +95,8 @@ def decodeBody(response, previewLen):
                 decodeBody = body.decode(charset)
                 logger.info(f"Body Decoded (First {previewLen} Characters): {decodeBody[:previewLen]}")
                 return decodeBody
-        except UnicodeDecodeError as e:
-                logger.error(Fore.RED + f"Decoding failed: {e}" + Fore.RESET)
+        except UnicodeDecodeError as dec_err:
+                logger.error(Fore.RED + f"Decoding failed: {dec_err}" + Fore.RESET)
                 return body.decode('ISO-8859-1', errors='replace')
 
 def fetcher(url):
@@ -87,7 +109,7 @@ def fetcher(url):
                         if response == None:
                                 return None
                         if response == "SSLERR":
-                                verify = input("Do you want to load the site anyway? (y/N) " + Fore.RED + "[This is not recommended!] " + Fore.RESET)
+                                verify = tui.handleStdIn(tui.address_bar, "Do you want to load the site anyway? (y/N) " + Fore.RED + "[This is not recommended!] " + Fore.RESET)
                                 if verify.lower() == "y":
                                         response = fetch(url, host, False)
                                 else:
@@ -95,12 +117,13 @@ def fetcher(url):
                         status = handleErrors(response)
                         if status > 399:
                                 body = decodeBody(response, 250)
-                                retry = input("Retry (y/N)? ")
+                                retry = tui.handleStdIn(tui.address_bar, "Retry (y/N)? ")
                                 if retry.lower() == "y":
                                         continue
                                 return body
                         else:
                                 body = decodeBody(response, 750)
                                 return body
+if __name__ == "__main__":
+        fetcher(tui.handleStdIn(tui.address_bar, "URL "))
 
-fetcher(input("URL: "))
