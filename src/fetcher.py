@@ -80,7 +80,6 @@ def decodeBody(response):
                 decodeBody = body.decode(charset)
                 logger.info(f"Body Decoded (First 500 Characters): {decodeBody[:500]}")
                 return decodeBody
-<<<<<<< HEAD
         except UnicodeDecodeError as dec_err:
                 logger.error(Fore.RED + f"Decoding failed: {dec_err}" + Fore.RESET)
                 return body.decode('ISO-8859-1', errors='replace')
@@ -113,14 +112,3 @@ def fetcher(url):
 if __name__ == "__main__":
         fetcher(tui.handleStdIn(tui.address_bar, "URL "))
 
-=======
-        except UnicodeDecodeError as e:
-                logger.error(f"Decoding failed: {e}")
-                return body.decode('ISO-8859-1', errors='replace')
-
-
-url = input("Url: ")
-host = getHost(url)
-response = fetch(url, host)
-decodeBody(response)
->>>>>>> parent of d70c1ec (Finished the fetcher, created the parser file)
