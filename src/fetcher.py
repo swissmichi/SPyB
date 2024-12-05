@@ -22,13 +22,10 @@ import re
 import logging
 import json
 import socket
-<<<<<<< HEAD
 import colorama
 from colorama import Fore, Back
 import tui
 colorama.just_fix_windows_console()
-=======
->>>>>>> parent of d70c1ec (Finished the fetcher, created the parser file)
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG,  format="%(asctime)s - %(levelname)s - %(message)s")
 
