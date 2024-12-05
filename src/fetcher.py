@@ -50,16 +50,10 @@ def getHost(url):
         else:
                 logger.error(f"Invalid URL: {url}")
 
-<<<<<<< HEAD
 def fetch(url, host, verify = True):
         headers = {"user-agent" : "SPyB/0.1", 
                    "host" : host,
                    "Cache-control": "max-age=180, public}"
-=======
-def fetch(url, host):
-        headers = {"user-agent" : "StupidPythonBrowser/0.1", 
-                   "host" : host
->>>>>>> parent of d70c1ec (Finished the fetcher, created the parser file)
         }
         response = requests.get(url, headers = headers)
         logger.info(response)
