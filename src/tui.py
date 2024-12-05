@@ -20,7 +20,6 @@ import logging
 import json
 import colorama
 from colorama import Fore, Back
-from curses.textpad import Textbox, rectangle
 colorama.just_fix_windows_console()
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG,  format="%(asctime)s - %(levelname)s - %(message)s")
@@ -40,11 +39,9 @@ controls = curses.newwin(1, num_cols, num_rows - 1, 0)
 
 
 def handleStdIn(section, string):
-        section.addstr(0,0,f"{string} (Ctrl-G to Return)")
-        box = Textbox(section)
-        section.refresh()
-        box.edit()
-        return box.gather()
+        section.addstr(0,0,string)
+        curses.echo()
+        return screen.getstr().decode()
 
 def handleStdOut(section, string):
         section.addstr(0,0,string)

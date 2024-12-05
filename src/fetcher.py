@@ -59,8 +59,19 @@ def fetch(url, host, verify = True):
         logger.info(response)
 
         return response
-        
-def decodeBody(response):
+
+def handleErrors(response):
+        status = response.status_code
+        reason = response.reason
+        if 199 < status < 203 or 206 < status < 300:
+                logger.info(f"Status: {status} {reason}")
+        elif 202 < status < 207 or 299 < status < 400:
+                logger.warn(Fore.YELLOW + f"Status: {status} {reason}" + Fore.RESET)
+        elif 399 < status < 600:
+                logger.error(Fore.RED + f"Status: {status} {reason}" + Fore.RESET)
+        return status
+
+def decodeBody(response, previewLen):
         contentType = response.headers['Content-Type']
         contentEncoding = response.headers['Content-Encoding']
         logger.debug(f'Content-Type: {contentType}')
@@ -72,7 +83,7 @@ def decodeBody(response):
 
         try:
                 decodeBody = body.decode(charset)
-                logger.info(f"Body Decoded (First 500 Characters): {decodeBody[:500]}")
+                logger.info(f"Body Decoded (First  Characters): {decodeBody[:previewLen]}")
                 return decodeBody
         except UnicodeDecodeError as dec_err:
                 logger.error(Fore.RED + f"Decoding failed: {dec_err}" + Fore.RESET)
