@@ -6,13 +6,10 @@ import socket
 import colorama
 from colorama import Fore, Back
 from pathlib import Path
-cwd = Path.cwd()
-mod_path = Path(__file__).parent
-log_path = (mod_path / "../etc/logfile.log").resolve()
+import logconf
 # import tui
 colorama.just_fix_windows_console()
-logger = logging.getLogger(__name__)
-logging.basicConfig(filename=log_path, level=logging.DEBUG,  format="%(asctime)s - %(filename)s - %(lineno)d - %(name)s - %(levelname)s - %(message)s")
+logger = logconf.init()
 
 def getHost(url):
         scheme = re.search(r"\bhttps?://", url)
@@ -22,7 +19,10 @@ def getHost(url):
         if scheme and host:
                 logger.debug(f"Scheme: {scheme.group()}")
                 logger.info(f"Host: {host.group()}")
-                logger.debug(f"Host IP: {socket.gethostbyname(host.group())}")
+                try:
+                        logger.debug(f"Host IP: {socket.gethostbyname(host.group())}")
+                except:
+                        logger.error(f"The host {host.group()} doesn't appear to exist. Check your internet connection.")
                 if path:
                         logger.debug(f"Path: {path.group()}")
                 else:
@@ -40,10 +40,17 @@ def fetch(url, host, verify = True):
                    "host" : host,
                    "Cache-control": "max-age=180, public}"
         }
-        response = requests.get(url, headers = headers)
-        logger.info(response)
-
-        return response
+        try:
+                response = requests.get(url, headers = headers, verify=verify)
+                return response
+        except requests.exceptions.SSLError as ssl_err:
+                logger.critical(f"SSL Error occured: {ssl_err}")
+                return "SSLERR"
+        except requests.exceptions.RequestException as req_err:
+                logger.error(f"Request Error occurred: {req_err}")
+                return None
+                
+        
 
 def handleErrors(response):
         status = response.status_code
@@ -58,9 +65,7 @@ def handleErrors(response):
 
 def decodeBody(response, previewLen):
         contentType = response.headers['Content-Type']
-        contentEncoding = response.headers['Content-Encoding']
         logger.debug(f'Content-Type: {contentType}')
-        logger.debug(f'Content-Encoding: {contentEncoding}')
         charsetMatch = re.search(r'charset=([\w-]+)', contentType)
         charset = charsetMatch.group(1) if charsetMatch else "utf-8"
         logger.debug(charset)
