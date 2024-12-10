@@ -22,7 +22,7 @@ def getHost(url):
                 try:
                         logger.debug(f"Host IP: {socket.gethostbyname(host.group())}")
                 except:
-                        logger.error(f"The host {host.group()} doesn't appear to exist. Check your internet connection.")
+                        logger.error(f"The host {host.group()} doesn't appear to exist. Please check the address and your internet connection.")
                 if path:
                         logger.debug(f"Path: {path.group()}")
                 else:
