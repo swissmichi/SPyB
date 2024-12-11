@@ -1,8 +1,8 @@
-import fetcher
-import json
-import colorama
-from colorama import Fore, Back
-from html.parser import HTMLParser
-colorama.just_fix_windows_console()
-logger = logging.getLogger(__name__)
-logging.basicConfig(LOG_FILENAME = "../etc/logfile.log", level=logging.DEBUG,  format="%(asctime)s - %(levelname)s - %(message)s")
+from markdownify import markdownify as md 
+import logconf
+logger = logconf.init()
+
+def parse(html_body):
+        markdown = md(html_body)
+        logger.info(f"Markdown Body (First 750 Characters): {markdown[:750]}")
+        return markdown

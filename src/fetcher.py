@@ -6,14 +6,18 @@ import socket
 import colorama
 from colorama import Fore, Back
 from pathlib import Path
+# Below are files found in /src
 import logconf
+import parser
 # import tui
+
 colorama.just_fix_windows_console()
 logger = logconf.init()
 
+# Gets the Host using RegEx
 def getHost(url):
         scheme = re.search(r"\bhttps?://", url)
-        host = re.search(r"([-%@a-z0-9]+\.)+[-%@a-z0-9]+", url)
+        host = re.search(r"([-%@a-z0-9]+\.)+[-%@a-z0-9]+", url) # Important part
         path = re.search(r"((?<=[-%@a-z0-9])/[-%@a-z0-9]+)+", url)
         query = re.search(r"(\?[-%@a-z0-9]+=[-%@a-z0-9]+(&[-%@a-z0-9]+=[-%@a-z0-9]+)*)|(\?([-%@a-z0-9]+\+)*[-%@a-z0-9]+)", url)
         if scheme and host:
@@ -35,6 +39,7 @@ def getHost(url):
         else:
                 logger.error(f"Invalid URL: {url}")
 
+# gets an HTTP Response using request module
 def fetch(url, host, verify = True):
         headers = {"user-agent" : "SPyB/0.1", 
                    "host" : host,
@@ -51,7 +56,7 @@ def fetch(url, host, verify = True):
                 return None
                 
         
-
+# Outputs log entries when receiveing an http status
 def handleErrors(response):
         status = response.status_code
         reason = response.reason
@@ -63,6 +68,7 @@ def handleErrors(response):
                 logger.error(f"Status: {status} {reason}")
         return status
 
+# decodes the body (if required) using the character set given in the response or utf-8
 def decodeBody(response, previewLen):
         contentType = response.headers['Content-Type']
         logger.debug(f'Content-Type: {contentType}')
@@ -79,6 +85,7 @@ def decodeBody(response, previewLen):
                 logger.error(f"Decoding failed: {dec_err}")
                 return body.decode('ISO-8859-1', errors='replace')
 
+# Outputs the HTML Body given in the HTTP Response
 def fetcher(url):
         while True:
                 host = getHost(url)
@@ -108,5 +115,5 @@ def fetcher(url):
                                 return body
 if __name__ == "__main__":
         # fetcher(tui.handleStdIn(tui.address_bar, "URL "))
-        fetcher(input("URL: "))
+        parser.parse(fetcher(input("URL: ")))
 
