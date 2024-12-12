@@ -3,3 +3,5 @@ SPyBENV
 etc/logfile.log
 etc/logfile.log.*
 .vscode
+.VSCodeCounter
+etc/config.json

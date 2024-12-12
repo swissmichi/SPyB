@@ -1,0 +1,10 @@
+requests
+re
+logging
+json
+socket
+colorama
+pathlib 
+sys
+markdownify
+curses
