@@ -1,4 +1,4 @@
-SPyBENV
+venv
 **/__pycache__/
 etc/logfile.log
 etc/logfile.log.*
