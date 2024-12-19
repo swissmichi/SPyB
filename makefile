@@ -1,17 +1,21 @@
+SHELL := /bin/bash
 SRCS = $(wildcard src/*.py)
 INIT = src/init.sh
-DEPENDS = etc/DEPENDENCIES.txt
+PYDEPENDS = ./etc/pyDEPENDENCIES.txt
 
 
 
 init:
 ifneq ("$(wildcard venv)","")
-	bash $(INIT)
+	@echo "No need to init"
 
 else
-	python3 -m venv venv
-	source venv/bin/activate
-	venv/bin/pip3 install -r $(DEPENDS)
-	bash $(INIT)
+	@echo "Checking shell dependencies"
+	@source ./src/checkshdepends.sh
+	@echo "Creating a python virtual environment and installing dependencies"
+	@python3 -m venv venv
+	@source ./venv/bin/activate
+	@./venv/bin/pip3 install -r $(PYDEPENDS)
+	
 endif
 
