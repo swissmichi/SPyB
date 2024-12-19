@@ -3,28 +3,23 @@ import logging
 import json
 import colorama
 from colorama import Fore, Back
+import logconf
 colorama.just_fix_windows_console()
-logger = logging.getLogger(__name__)
-logging.basicConfig(LOG_FILENAME = "../etc/logfile.log", level=logging.DEBUG,  format="%(asctime)s - %(levelname)s - %(message)s")
-
+logger = logconf.init()
+with open(conf_path) as json_data:
+                config = json.load(json_data)
+try:
+        side_bar_size = config['side_bar_size']
+except:
+        side_bar_size = 30
 screen = curses.initscr()
 num_rows, num_cols = screen.getmaxyx()
 
 logger.debug(f"Size: {num_rows} by {num_cols}")
 
 
-address_bar = curses.newwin(1, num_cols - 20, 0, 0)
-side_bar_opts = curses.newwin(1, 20, 0, num_cols - 20)
-main_panel = curses.newpad(10000, num_cols - 20)
-side_bar = curses.newpad(10000, 20)
+address_bar = curses.newwin(1, num_cols - side_bar_size, 0, 0)
+side_bar_opts = curses.newwin(1, side_bar_size, 0, num_cols - side_bar_size)
+main_panel = curses.newpad(999999, num_cols - side_bar_size)
+side_bar = curses.newpad(9999999, side_bar_size)
 controls = curses.newwin(1, num_cols, num_rows - 1, 0)
-
-
-
-
-
-def handleStdIn(section, string):
-        pass
-
-def handleStdOut(section, string):
-        pass
