@@ -5,9 +5,9 @@ PYDEPENDS = ./etc/pyDEPENDENCIES.txt
 
 
 
-init:
+install:
 ifneq ("$(wildcard venv)","")
-	@echo "No need to init"
+	@echo "SPyB is already installed."
 
 else
 	@echo "Checking shell dependencies"
@@ -18,4 +18,15 @@ else
 	@./venv/bin/pip3 install -r $(PYDEPENDS)
 	
 endif
+
+uninstall:
+	@rm -rf ./venv
+	@rm -f ./etc/config.json
+
+resetenv:
+	@rm -rf ./venv
+	@echo "Creating a python virtual environment and installing dependencies"
+	@python3 -m venv venv
+	@source ./venv/bin/activate
+	@./venv/bin/pip3 install -r $(PYDEPENDS)
 

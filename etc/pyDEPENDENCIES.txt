@@ -1,3 +1,4 @@
 requests
 colorama
-markdownify
+BeautifulSoup4
+Pygments

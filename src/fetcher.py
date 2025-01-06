@@ -79,7 +79,7 @@ def decodeBody(response, previewLen):
 
         try:
                 decodeBody = body.decode(charset)
-                logger.info(f"Body Decoded (First {previewLen} Characters): {decodeBody[:previewLen]}")
+                logger.debug(f"Body Decoded (First {previewLen} Characters): {decodeBody[:previewLen]}")
                 return decodeBody
         except UnicodeDecodeError as dec_err:
                 logger.error(f"Decoding failed: {dec_err}")
