@@ -35,6 +35,9 @@ resetenv:
 	@python3 -m venv $(VENV)
 	@source $(VENVACTIVATE)
 	@$(PIP3) install -r $(PYDEPENDS)
+
+updatelibs:
+	@$(PIP3) install -r $(PYDEPENDS)
 config:
 	@echo "TODO"
 

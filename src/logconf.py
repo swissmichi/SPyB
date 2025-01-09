@@ -1,42 +1,34 @@
 import logging
 import logging.handlers
 from pathlib import Path
-import json
+import confvars
+from colorama import Fore, Style
 import sys
 def init():
+        class ColoredFormatter(logging.Formatter):
+
+                format = "%(asctime)s - %(levelname)s - %(message)s"
+
+                FORMATS = {
+                        logging.DEBUG: format,
+                        logging.INFO: format,
+                        logging.WARNING: Fore.YELLOW + format + Fore.RESET,
+                        logging.ERROR: Fore.RED + format + Fore.RESET,
+                        logging.CRITICAL: Fore.RED + Style.BRIGHT + format + Fore.RESET + Style.RESET_ALL
+        }
+
+                def format(self, record):
+                        log_fmt = self.FORMATS.get(record.levelno)
+                        formatter = logging.Formatter(log_fmt)
+                        return formatter.format(self, record)
         cwd = Path.cwd()
         parent_path = Path(__file__).parent
         log_path = (parent_path / "../etc/logfile.log").resolve()
-        conf_path = (parent_path / "../etc/config.conf").resolve()
-       
-        with open(conf_path) as json_data:
-                config = json.load(json_data)
-        try:
-                max_log_size = config['max_log_size']
-        except:
-                max_log_size = 1048576
-        try:
-                max_log_backups = config["max_log_backups"]
-        except:
-                max_log_backups = 10
-        loglevels = {
-                "NOTSET": 0,
-                "DEBUG": 10,
-                "INFO": 20,
-                "WARN": 30,
-                "WARNING": 30,
-                "ERROR": 40,
-                "CRITICAL": 50,
-                "FATAL": 50
-        }
-        try:
-                log_level_tty = loglevels[config['terminal_logger_level']]
-        except:
-                log_level_tty = 20
-        try:
-                log_level_file = loglevels[config['file_logger_level']]
-        except:
-                log_level_file = 10
+        log_level_tty = confvars.log_level_tty
+        log_level_file = confvars.log_level_file
+        max_log_size = confvars.max_log_size
+        max_log_backups = confvars.max_log_backups
+
         logger = logging.getLogger(__name__)
         logger.propagate = False
         logger.setLevel(min(log_level_tty, log_level_file))
@@ -46,7 +38,7 @@ def init():
         logger.addHandler(file_handler)
 
         console_handler = logging.StreamHandler()
-        console_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+        console_handler.setFormatter(ColoredFormatter)
         console_handler.setLevel(log_level_tty)
         logger.addHandler(console_handler)
         logger.debug(logger.handlers)
