@@ -20,7 +20,7 @@ def init():
                 def format(self, record):
                         log_fmt = self.FORMATS.get(record.levelno)
                         formatter = logging.Formatter(log_fmt)
-                        return formatter.format(self, record)
+                        return formatter.format(record)
         cwd = Path.cwd()
         parent_path = Path(__file__).parent
         log_path = (parent_path / "../etc/logfile.log").resolve()
@@ -38,7 +38,7 @@ def init():
         logger.addHandler(file_handler)
 
         console_handler = logging.StreamHandler()
-        console_handler.setFormatter(ColoredFormatter)
+        console_handler.setFormatter(ColoredFormatter())
         console_handler.setLevel(log_level_tty)
         logger.addHandler(console_handler)
         logger.debug(logger.handlers)
