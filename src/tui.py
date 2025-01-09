@@ -1,11 +1,8 @@
 import curses
 import logging
 import json
-import colorama
-from colorama import Fore, Back
 import logconf
-colorama.just_fix_windows_console()
-logger = logconf.init()
+logconf.init()
 with open(conf_path) as json_data:
                 config = json.load(json_data)
 try:

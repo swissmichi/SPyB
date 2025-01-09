@@ -3,7 +3,7 @@ from pygments import highlight
 from pygments.lexers import HtmlLexer
 from pygments.formatters import TerminalFormatter
 import logconf
-logger = logconf.init()
+logger = logconf.logger
 
 # Converts an HTML Body to Test with ANSI escape codes
 def parse(html_body):

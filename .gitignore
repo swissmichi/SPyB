@@ -1,7 +1,7 @@
-venv
+.venv
 **/__pycache__/
 etc/logfile.log
 etc/logfile.log.*
 .vscode
 .VSCodeCounter
-etc/config.json
+etc/config.conf

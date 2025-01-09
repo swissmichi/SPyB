@@ -4,16 +4,12 @@ import logging
 import json
 import socket
 import colorama
-from colorama import Fore, Back
 from pathlib import Path
 # Below are files found in /src
 import logconf
 import parser
 # import tui
-
-colorama.just_fix_windows_console()
-logger = logconf.init()
-
+logger = logconf.logger
 # Gets the Host using RegEx
 def getHost(url):
         scheme = re.search(r"\bhttps?://", url)

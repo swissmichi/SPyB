@@ -7,8 +7,7 @@ def init():
         cwd = Path.cwd()
         parent_path = Path(__file__).parent
         log_path = (parent_path / "../etc/logfile.log").resolve()
-        conf_path = (parent_path / "../etc/config.json").resolve()
-        logger = logging.getLogger(__name__)
+        conf_path = (parent_path / "../etc/config.conf").resolve()
        
         with open(conf_path) as json_data:
                 config = json.load(json_data)
@@ -38,8 +37,9 @@ def init():
                 log_level_file = loglevels[config['file_logger_level']]
         except:
                 log_level_file = 10
-        logger.setLevel(min(log_level_tty, log_level_file))
         logger = logging.getLogger(__name__)
+        logger.propagate = False
+        logger.setLevel(min(log_level_tty, log_level_file))
         file_handler = logging.handlers.RotatingFileHandler(log_path, maxBytes=max_log_size, backupCount=max_log_backups)
         file_handler.setFormatter(logging.Formatter("%(asctime)s - %(filename)s - %(lineno)d - %(levelname)s - %(message)s"))
         file_handler.setLevel(log_level_file)
@@ -49,6 +49,7 @@ def init():
         console_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
         console_handler.setLevel(log_level_tty)
         logger.addHandler(console_handler)
+        logger.debug(logger.handlers)
         return logger
         
-
+logger = init()
