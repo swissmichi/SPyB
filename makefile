@@ -7,7 +7,7 @@ VENV = ./.venv
 VENVACTIVATE = $(VENV)/bin/activate
 PIP3 = $(VENV)/bin/pip3
 PYTHON = $(VENV)/bin/python3
-MAIN = ./src/fetcher.py
+MAIN = ./src/main.py
 
 install:
 ifneq ("$(wildcard venv)","")
