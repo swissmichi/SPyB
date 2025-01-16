@@ -56,6 +56,7 @@ You can change the control mode by editing the `controls` value in `etc/config.c
 | Scroll Up/Down        | j/k           | Arrow keys    | ^P/^N         |
 | Quit program          | q             | ^X            | ^X^C          |
 | Open URL              | o             | ^W            | ^X^F          |
+| Follow link           | f             |^J             | ^J            |
 | Show Terminal         | t             | ^T            | ^T            |
 | Find in Page          | /             | ^W            | ^S            |
 | Next/Prev Match       | n/N           | n/N           | n/N           |
@@ -63,7 +64,7 @@ You can change the control mode by editing the `controls` value in `etc/config.c
 
 ## Compatability
 
-This program is expected to be able to run on all Linux distrobutions with Bash and Make. <br>
+This program is expected to be able to run on all Linux distributions with Bash and Make. <br>
 **This program hasn't ever, does not, and won't ever support Windows** <br>
 
 Currently tested on:
