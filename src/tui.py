@@ -14,9 +14,24 @@ import parser
 
 logger = logconf.logger
 
+def cleanup():
+    """Clean up the terminal state."""
+    curses.nocbreak()
+    curses.echo()
+    curses.endwin()
+
+def init_tui(control_style='vim'):
+    """Initialize the TUI with the specified control style."""
+    global screen, num_rows, num_cols
+    screen = curses.initscr()
+    curses.noecho()
+    curses.cbreak()
+    screen.keypad(True)
+    num_rows, num_cols = screen.getmaxyx()
+    return TUI(control_style)
+
 class TUI:
     def __init__(self, control_style='vim'):
-        self.init_screen()
         self.control_style = control_style
         self.controls_map = {
             'vim': VIM_CONTROLS,
@@ -31,11 +46,16 @@ class TUI:
         self.links = []
         self.link_positions = {}
         self.last_search = ""
-        self.search_pos = -1
-
-    def init_screen(self):
+        self.search_matches = []  # List of line numbers containing matches
+        self.current_match = -1  # Index into search_matches
+        self.should_quit = False
+        
+        # Create windows
+        self.init_windows()
+        
+    def init_windows(self):
         """Initialize or reinitialize the screen state"""
-        global screen, address_bar, controls, num_rows, num_cols
+        global address_bar, controls, content_win
         
         # If we're reinitializing, clean up first
         if hasattr(self, 'screen'):
@@ -45,13 +65,12 @@ class TUI:
             curses.endwin()
         
         # Initialize screen
-        screen = curses.initscr()
-        num_rows, num_cols = screen.getmaxyx()
+        self.screen = screen
         
         # Create windows
         address_bar = curses.newwin(1, num_cols, 0, 0)
         controls = curses.newwin(1, num_cols, num_rows - 1, 0)
-        self.content_win = curses.newwin(num_rows - 2, num_cols, 1, 0)
+        content_win = curses.newwin(num_rows - 2, num_cols, 1, 0)
         
         # Set up screen state
         curses.start_color()
@@ -62,7 +81,7 @@ class TUI:
         # Set window backgrounds
         self.address_bar = address_bar
         self.controls = controls
-        self.screen = screen
+        self.content_win = content_win
         
         self.address_bar.bkgd(' ', curses.color_pair(1))
         self.content_win.bkgd(' ', curses.color_pair(3))
@@ -90,46 +109,53 @@ class TUI:
             return
             
         from parser import parse
-        from bs4 import BeautifulSoup
         
-        # Parse HTML and extract links
-        soup = BeautifulSoup(content, 'html.parser')
-        self.links = []
-        self.link_positions = {}  # Map line numbers to links
-        
-        # Process links and their positions
-        for link in soup.find_all('a', href=True):
-            href = link['href']
-            if not href.startswith(('http://', 'https://')):
-                # Make relative URLs absolute
-                from urllib.parse import urljoin
-                href = urljoin(self.current_url, href)
-            link_text = link.get_text().strip()
-            if link_text:  # Only store links with visible text
-                self.links.append((link_text, href))
+        # Parse HTML and get formatted text
+        formatted_content, num_lines = parse(content, base_url=self.current_url)
+        if formatted_content is None:
+            self.show_error("Failed to parse content.")
+            return
             
-        formatted_content, num_lines = parse(content)
         self.content_lines = formatted_content.split('\n')
+        self.links = []
+        self.link_positions = {}
         
-        # Map links to line numbers
+        # Extract links from the formatted content
+        import re
+        link_pattern = r'\[(.*?)\]\((https?://[^\s\)]+)\)'
         for i, line in enumerate(self.content_lines):
-            for link_text, href in self.links:
-                if link_text in line:
-                    self.link_positions[i] = (link_text, href)
-        
+            for match in re.finditer(link_pattern, line):
+                link_text, href = match.groups()
+                self.links.append((link_text, href))
+                self.link_positions[i] = (link_text, href)
+                
         self.cursor_y = 0
+        self.scroll_pos = 0
         self.refresh_display()
         
     def follow_link(self):
         """Follow link at cursor position"""
         current_line = self.scroll_pos + self.cursor_y
         if current_line in self.link_positions:
-            _, href = self.link_positions[current_line]
+            link_text, href = self.link_positions[current_line]
             self.current_url = href
+            # Show the URL being followed
+            self.address_bar.clear()
+            try:
+                self.address_bar.addstr(0, 0, f"Following: {href}")
+                self.address_bar.refresh()
+            except curses.error:
+                pass
             return href
+            
+        # Only show "No link" message if there wasn't a link
         self.address_bar.clear()
-        self.address_bar.addstr(0, 0, "No link at cursor position")
-        self.address_bar.refresh()
+        try:
+            self.address_bar.addstr(0, 0, "No link at cursor position")
+            self.address_bar.refresh()
+            curses.napms(1000)  # Show message for 1 second
+        except curses.error:
+            pass
         return None
         
     def show_url_bar(self):
@@ -295,20 +321,29 @@ class TUI:
     def fetch_url(self, url):
         """Fetch content from URL with error handling"""
         import fetcher
+        
         content = fetcher.fetcher(url)
         
-        if content == "SSLERR":
-            if self.handle_ssl_error():
-                # Retry with SSL verification disabled
-                content = fetcher.fetcher(url, verify=False)
-                if content == "SSLERR":
-                    self.show_error("SSL Error persists. Cannot load page.")
-                    return None
-                return content
+        if content is None:
+            self.show_error("Failed to fetch page. The host may not exist or your internet connection may be down.")
+            self.current_url = ""  # Reset URL so user can enter a new one
             return None
-        elif content is None:
-            self.show_error("Failed to fetch page. Please try again.")
-            return None
+        elif content == "SSLERR":
+            if not self.handle_ssl_error():
+                return None
+            # Retry with SSL verification disabled
+            content = fetcher.fetcher(url, verify=False)
+            if content == "SSLERR":
+                self.show_error("SSL Error persists. Cannot load page.")
+                self.current_url = ""  # Reset URL so user can enter a new one
+                return None
+        elif isinstance(content, tuple) and content[0] == "ERROR":
+            _, status, reason, error_content = content
+            if not self.handle_http_error(status, reason, error_content):
+                self.current_url = ""  # Reset URL so user can enter a new one
+                return None
+            # User wants to retry
+            return self.fetch_url(url)
             
         return content
 
@@ -318,10 +353,23 @@ class TUI:
         try:
             self.content_win.addstr(1, 2, "Error:", curses.A_BOLD)
             self.content_win.addstr(1, 9, f" {message}")
+            self.content_win.addstr(3, 2, "Press Enter to continue...")
         except curses.error:
             pass
         self.content_win.refresh()
-    
+        
+        # Wait for Enter key specifically
+        while True:
+            try:
+                key = self.content_win.getch()
+                if key in (ord('\n'), ord('\r')):
+                    break
+            except curses.error:
+                pass
+        
+        self.content_win.clear()
+        self.content_win.refresh()
+
     def search_content(self):
         """Search content in the current page"""
         search_term = self.get_user_input("Search: ")
@@ -329,75 +377,131 @@ class TUI:
             return
             
         self.last_search = search_term.lower()
-        self.search_pos = -1
-        self.find_next()
+        self.search_matches = []
+        self.current_match = -1
+        
+        # Find all matches
+        for i, line in enumerate(self.content_lines):
+            if self.last_search in line.lower():
+                self.search_matches.append(i)
+                
+        if self.search_matches:
+            self.jump_to_match(0)
+        else:
+            self.address_bar.clear()
+            self.address_bar.addstr(0, 0, "No matches found")
+            self.address_bar.refresh()
+            
+    def jump_to_match(self, match_index):
+        """Jump to a specific match by index"""
+        if not self.search_matches:
+            return
+            
+        # Handle wrapping
+        self.current_match = match_index % len(self.search_matches)
+        line_num = self.search_matches[self.current_match]
+        
+        # Update display
+        self.scroll_pos = max(0, min(line_num, len(self.content_lines) - (num_rows - 2)))
+        self.cursor_y = line_num - self.scroll_pos
+        
+        # Show match position
+        self.address_bar.clear()
+        self.address_bar.addstr(0, 0, f"Match {self.current_match + 1} of {len(self.search_matches)}")
+        self.address_bar.refresh()
+        
+        self.refresh_display()
         
     def find_next(self):
         """Find next occurrence of search term"""
-        if not self.last_search:
-            return
+        if self.search_matches:
+            self.jump_to_match(self.current_match + 1)
             
-        # Start from next position
-        start_pos = self.search_pos + 1
-        
-        # Search in all lines
-        for i in range(start_pos, len(self.content_lines)):
-            if self.last_search in self.content_lines[i].lower():
-                self.search_pos = i
-                # Adjust scroll position to show the found text
-                if i < self.scroll_pos or i >= self.scroll_pos + (num_rows - 2):
-                    self.scroll_pos = max(0, min(i, len(self.content_lines) - (num_rows - 2)))
-                self.cursor_y = i - self.scroll_pos
-                self.refresh_display()
-                return
-                
-        # If not found after current position, start from beginning
-        if start_pos > 0:
-            self.address_bar.clear()
-            self.address_bar.addstr(0, 0, "Search wrapped to top")
-            self.address_bar.refresh()
-            for i in range(0, start_pos):
-                if self.last_search in self.content_lines[i].lower():
-                    self.search_pos = i
-                    if i < self.scroll_pos or i >= self.scroll_pos + (num_rows - 2):
-                        self.scroll_pos = max(0, min(i, len(self.content_lines) - (num_rows - 2)))
-                    self.cursor_y = i - self.scroll_pos
-                    self.refresh_display()
-                    return
-                    
-        # If nothing found, show message
-        self.address_bar.clear()
-        self.address_bar.addstr(0, 0, f"No matches found for '{self.last_search}'")
-        self.address_bar.refresh()
-        self.search_pos = -1  # Reset search position
+    def find_previous(self):
+        """Find previous occurrence of search term"""
+        if self.search_matches:
+            self.jump_to_match(self.current_match - 1)
         
     def refresh_display(self):
         """Refresh the display with current content."""
-        self.content_win.clear()
-        
-        display_lines = self.content_lines[self.scroll_pos:self.scroll_pos + (num_rows - 2)]
-        for i, line in enumerate(display_lines):
-            try:
-                current_line = self.scroll_pos + i
-                # Check if this line has a link
-                if current_line in self.link_positions:
-                    link_text = self.link_positions[current_line][0]
-                    start_idx = line.find(link_text)
-                    self.content_win.addstr(i, 0, line[:start_idx])
-                    # Highlight link if cursor is on this line
-                    attr = curses.A_REVERSE if i == self.cursor_y else curses.A_UNDERLINE
-                    self.content_win.addstr(i, start_idx, link_text, attr)
-                    self.content_win.addstr(i, start_idx + len(link_text), line[start_idx + len(link_text):])
-                else:
-                    # Regular line with cursor highlight if needed
-                    attr = curses.A_REVERSE if i == self.cursor_y else curses.A_NORMAL
-                    self.content_win.addstr(i, 0, line, attr)
-            except curses.error:
-                pass
+        try:
+            self.content_win.clear()
+            
+            # Calculate visible range
+            start = self.scroll_pos
+            end = min(start + num_rows - 2, len(self.content_lines))
+            
+            # Display each line
+            for i in range(start, end):
+                y = i - start
+                line = self.content_lines[i]
                 
-        self.show_controls()
-        self.content_win.refresh()
-        
+                # Handle links and search matches
+                if i in self.link_positions:
+                    link_text, _ = self.link_positions[i]
+                    # Split line into parts: before link, link, after link
+                    link_start = line.find(link_text)
+                    if link_start != -1:
+                        # Show parts before link
+                        if link_start > 0:
+                            self.content_win.addstr(y, 0, line[:link_start])
+                            
+                        # Show link with highlighting
+                        attr = curses.A_REVERSE if y == self.cursor_y else curses.A_UNDERLINE
+                        self.content_win.addstr(y, link_start, link_text, attr)
+                        
+                        # Show parts after link
+                        after_link = link_start + len(link_text)
+                        if after_link < len(line):
+                            self.content_win.addstr(y, after_link, line[after_link:])
+                    else:
+                        # Fallback if link text not found
+                        self.content_win.addstr(y, 0, line)
+                        
+                # Handle search highlights
+                elif self.last_search and self.last_search in line.lower():
+                    # Split line into segments based on matches
+                    segments = []
+                    last_end = 0
+                    search_lower = self.last_search.lower()
+                    line_lower = line.lower()
+                    
+                    while True:
+                        pos = line_lower.find(search_lower, last_end)
+                        if pos == -1:
+                            segments.append((line[last_end:], False))
+                            break
+                        if pos > last_end:
+                            segments.append((line[last_end:pos], False))
+                        segments.append((line[pos:pos+len(search_lower)], True))
+                        last_end = pos + len(search_lower)
+                    
+                    # Display segments with appropriate highlighting
+                    x = 0
+                    for text, is_match in segments:
+                        attr = curses.A_REVERSE if is_match else curses.A_NORMAL
+                        try:
+                            self.content_win.addstr(y, x, text, attr)
+                            x += len(text)
+                        except curses.error:
+                            pass
+                else:
+                    # Regular line
+                    try:
+                        attr = curses.A_REVERSE if y == self.cursor_y else curses.A_NORMAL
+                        self.content_win.addstr(y, 0, line, attr)
+                    except curses.error:
+                        pass
+                        
+            # Show controls
+            self.show_controls()
+            
+            # Refresh windows
+            self.content_win.refresh()
+            
+        except curses.error:
+            pass
+            
     def _key_to_readable(self, key):
         """Convert control characters to readable format"""
         if len(key) == 1:
@@ -421,7 +525,6 @@ class TUI:
     def show_controls(self):
         """Display current control scheme at the bottom."""
         try:
-            # Convert control characters to readable format
             up = self._key_to_readable(self.controls_map['up'])
             down = self._key_to_readable(self.controls_map['down'])
             quit_key = self._key_to_readable(self.controls_map['quit'])
@@ -430,7 +533,19 @@ class TUI:
             find = self._key_to_readable(self.controls_map['find'])
             open_url = self._key_to_readable(self.controls_map['open_url'])
             
-            controls_text = f"UP: {up} DOWN: {down} QUIT: {quit_key} FOLLOW: {follow} TERM: {term} FIND: {find} OPEN URL: {open_url}"
+            controls = [
+                f"UP: {up}",
+                f"DOWN: {down}",
+                f"QUIT: {quit_key}",
+                f"FOLLOW: {follow}",
+                f"TERM: {term}",
+                f"FIND: {find}",
+                f"OPEN: {open_url}",
+                "n: Next match",
+                "N: Prev match"
+            ]
+            
+            controls_text = " | ".join(controls)
             self.controls.clear()
             # Leave one character space at the end to prevent cursor wrapping
             max_length = num_cols - 1
@@ -451,69 +566,78 @@ class TUI:
         # Restore previous screen content
         os.system('tput rmcup')
         # Reinitialize the screen
-        self.init_screen()
+        self.init_windows()
         self.refresh_display()
 
     def handle_input(self):
         """Handle user input based on current control scheme."""
-        key = self.screen.getch()
-        if key == -1:
-            return True
-            
-        # Handle multi-key sequences (like Ctrl-X Ctrl-C in Emacs)
-        if self.controls_map['quit'] == '\x18\x03' and key == 0x18:  # Ctrl-X
-            second_key = self.screen.getch()
-            if second_key == 0x03:  # Ctrl-C
-                cleanup()  # Ensure proper cleanup
-                return False
+        try:
+            key = self.screen.getch()
+            if key == -1:
+                return True
                 
-        # Convert key to string representation for comparison
-        key_str = chr(key) if key < 256 else curses.keyname(key).decode('utf-8')
-        
-        if key_str == self.controls_map['quit']:
-            cleanup()  # Ensure proper cleanup
-            return False
-        elif key_str == self.controls_map['find']:
-            self.search_content()
-        elif key_str == self.controls_map['open_url']:
-            new_url = self.show_url_bar()
-            if new_url:
-                return False  # Exit input loop to load new URL
-        elif key_str == self.controls_map['follow_link']:
-            url = self.follow_link()
-            if url:
-                return False  # Exit input loop to load new URL
-        elif key_str in (self.controls_map['up'], 'KEY_UP'):
-            self.cursor_y = max(0, self.cursor_y - 1)
-            if self.cursor_y < 2:  # Keep cursor in view
-                self.scroll_pos = max(0, self.scroll_pos - 1)
-        elif key_str in (self.controls_map['down'], 'KEY_DOWN'):
-            max_y = min(num_rows - 3, len(self.content_lines) - self.scroll_pos - 1)
-            self.cursor_y = min(max_y, self.cursor_y + 1)
-            if self.cursor_y > num_rows - 5:  # Keep cursor in view
-                self.scroll_pos = min(len(self.content_lines) - (num_rows - 2), self.scroll_pos + 1)
-        elif key_str == self.controls_map['scroll_up']:
-            self.scroll_pos = max(0, self.scroll_pos - (num_rows - 2))
-            self.cursor_y = 0  # Reset cursor position
-        elif key_str == self.controls_map['scroll_down']:
-            self.scroll_pos = min(len(self.content_lines) - (num_rows - 2), 
-                                self.scroll_pos + (num_rows - 2))
-            self.cursor_y = 0  # Reset cursor position
-        elif key_str == self.controls_map['show_terminal']:
-            self.show_terminal()
+            # Handle multi-key sequences (like Ctrl-X Ctrl-C in Emacs)
+            if self.controls_map['quit'] == '^X^C' and key == 0x18:  # Ctrl-X
+                try:
+                    second_key = self.screen.getch()
+                    if second_key == 0x03:  # Ctrl-C
+                        self.should_quit = True
+                        return False
+                    elif second_key == 0x06:  # Ctrl-F
+                        url = self.follow_link()
+                        if url:
+                            return False
+
+                except KeyboardInterrupt:
+                    # Suppress KeyboardInterrupt caused by Ctrl-C
+                    pass
+
+                    
+            # Convert key to string representation for comparison
+            key_str = chr(key) if key < 256 else curses.keyname(key).decode('utf-8')
             
-        self.refresh_display()
-        return True
-
-def init_tui(control_style='vim'):
-    tui = TUI(control_style)
-    return tui
-
-def cleanup():
-    curses.nocbreak()
-    screen.keypad(False)
-    curses.echo()
-    curses.endwin()
+            if key_str == self.controls_map['quit']:
+                self.should_quit = True
+                return False
+            elif key_str == self.controls_map['find']:
+                self.search_content()
+            elif key_str == 'n':  # Next match
+                self.find_next()
+            elif key_str == 'N':  # Previous match
+                self.find_previous()
+            elif key_str == self.controls_map['open_url']:
+                new_url = self.show_url_bar()
+                if new_url:
+                    self.current_url = new_url
+                    return False  # Exit input loop to load new URL
+            elif key_str == self.controls_map['follow_link']:
+                url = self.follow_link()
+                if url:
+                    return False  # Exit input loop to load new URL
+            elif key_str in (self.controls_map['up'], 'KEY_UP'):
+                if self.search_matches and key_str == self.controls_map['up']:
+                    self.find_previous()  # Use up key for previous match in vim mode
+                else:
+                    self.cursor_y = max(0, self.cursor_y - 1)
+                    if self.cursor_y < 2:  # Keep cursor in view
+                        self.scroll_pos = max(0, self.scroll_pos - 1)
+            elif key_str in (self.controls_map['down'], 'KEY_DOWN'):
+                if self.search_matches and key_str == self.controls_map['down']:
+                    self.find_next()  # Use down key for next match in vim mode
+                else:
+                    max_y = min(num_rows - 3, len(self.content_lines) - 1)
+                    self.cursor_y = min(max_y, self.cursor_y + 1)
+                    if self.cursor_y > max_y - 2:  # Keep cursor in view
+                        if self.scroll_pos + num_rows - 2 < len(self.content_lines):
+                            self.scroll_pos += 1
+            elif key_str == self.controls_map['show_terminal']:
+                self.show_terminal()
+                
+            self.refresh_display()
+            return not self.should_quit
+            
+        except curses.error:
+            return True
 
 VIM_CONTROLS = {
     'up': 'k',
@@ -531,25 +655,25 @@ VIM_CONTROLS = {
 NANO_CONTROLS = {
     'up': 'KEY_UP',
     'down': 'KEY_DOWN',
-    'quit': '\x18',  
-    'follow_link': '\x06',  
-    'back': '\x02',  
-    'scroll_up': 'KEY_PPAGE',
-    'scroll_down': 'KEY_NPAGE',
-    'show_terminal': '\x14',  
-    'find': '\x17',  
-    'open_url': '\x0F'
+    'quit': '^X',
+    'follow_link': '^J',
+    'back': '^B',
+    'scroll_up': '^U',
+    'scroll_down': '^D',
+    'show_terminal': '^T',
+    'find': '^W',
+    'open_url': '^O'
 }
 
 EMACS_CONTROLS = {
-    'up': '\x10',  
-    'down': '\x0E',  
-    'quit': '\x18\x03',  
-    'follow_link': '\x0A',  
-    'back': '\x02',  
-    'scroll_up': '\x1B\x76',  
-    'scroll_down': '\x16',  
-    'show_terminal': '\x1A',  
-    'find': '\x13',
-    'open_url': '\x0F'
+    'up': '^P',
+    'down': '^N',
+    'quit': '^X^C',
+    'follow_link': '^J',
+    'back': '^B',
+    'scroll_up': '^V',
+    'scroll_down': 'M-v',
+    'show_terminal': '^T',
+    'find': '^S',
+    'open_url': '^X^F'
 }

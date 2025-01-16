@@ -52,26 +52,27 @@ def init():
     max_log_backups = confvars.max_log_backups
     
     # Initialize logger
-    logger = logging.getLogger(__name__)
-    logger.setLevel(min(log_level_tty, log_level_file))
+    logger = logging.getLogger('spyb')
+    if not logger.handlers:  # Only add handlers if they don't exist
+        logger.setLevel(min(log_level_tty, log_level_file))
+        
+        # Terminal handler with color support
+        tty_handler = logging.StreamHandler()
+        tty_handler.setLevel(log_level_tty)
+        tty_handler.setFormatter(ColoredFormatter())
+        logger.addHandler(tty_handler)
+        
+        # File handler with rotation
+        file_handler = logging.handlers.RotatingFileHandler(
+            log_path,
+            maxBytes=max_log_size,
+            backupCount=max_log_backups
+        )
+        file_handler.setLevel(log_level_file)
+        file_handler.setFormatter(logging.Formatter("%(asctime)s - %(filename)s - %(lineno)d - %(levelname)s - %(message)s"))
+        logger.addHandler(file_handler)
     
-    # Terminal handler with color support
-    tty_handler = logging.StreamHandler()
-    tty_handler.setLevel(log_level_tty)
-    tty_handler.setFormatter(ColoredFormatter())
-    logger.addHandler(tty_handler)
-    
-    # File handler with rotation
-    file_handler = logging.handlers.RotatingFileHandler(
-        log_path,
-        maxBytes=max_log_size,
-        backupCount=max_log_backups
-    )
-    file_handler.setLevel(log_level_file)
-    file_handler.setFormatter(logging.Formatter("%(asctime)s - %(filename)s - %(lineno)d - %(levelname)s - %(message)s"))
-    logger.addHandler(file_handler)
-    
-    logger.debug(logger.handlers)
     return logger
 
+# Get or create logger instance
 logger = init()
