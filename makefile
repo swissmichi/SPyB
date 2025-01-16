@@ -1,5 +1,4 @@
 SHELL := /bin/bash
-SRCS = $(wildcard src/*.py)
 INIT = src/init.sh
 PYDEPENDS = ./etc/pyDEPENDENCIES.txt
 CONFIG = ./etc/config.conf
@@ -45,4 +44,9 @@ configdefaults:
 	@echo "Reset configuration back to defaults"
 
 run:
+	@stty -ixon
 	@$(PYTHON) $(MAIN)
+	@stty -ixoff
+
+idiotcards:
+	@$(PYTHON) ./src/durak.py

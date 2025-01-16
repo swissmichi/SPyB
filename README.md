@@ -1,7 +1,7 @@
 
 ![The SPyB Logo](etc/logo-spyb.png)
 # Simple Python Browser 24.01
-**SPyB** *(**S**imple **Py**thon **B**rowser)* is a simple python-based browser.
+**SPyB** *(**S**imple **Py**thon **B**rowser, pronounced [/ɛs.'paɪ.biː/])* is a simple python-based browser.
 
 ## Installation
 
@@ -38,7 +38,7 @@ make run
 ```
 or
 ```bash
-.venv/bin/python3 src/main.py
+stty -ixon && .venv/bin/python3 src/main.py
 ```
 
 
@@ -54,9 +54,9 @@ You can change the control mode by editing the `controls` value in `etc/config.c
 | Action                | Vim `vim`     | Nano `nano`   | Emacs `emacs` |             
 | --------------------- | ------------- | ------------- | ------------- |
 | Scroll Up/Down        | j/k           | Arrow keys    | ^P/^N         |
-| Quit program          | q             | ^X            | ^X^C          |
-| Open URL              | o             | ^W            | ^X^F          |
-| Follow link           | f             |^J             | ^J            |
+| Quit program          | q             | ^X            | ^C            |
+| Open URL              | o             | ^O            | ^O            |
+| Follow link           | f             | ^J            | ^J            |
 | Show Terminal         | t             | ^T            | ^T            |
 | Find in Page          | /             | ^W            | ^S            |
 | Next/Prev Match       | n/N           | n/N           | n/N           |

@@ -5,6 +5,7 @@ Initializes and runs the text-based browser interface.
 
 import app_confvars as confvars
 import tui
+import durak
 
 def main():
     # Initialize browser with configured control style
@@ -46,7 +47,10 @@ def main():
     except KeyboardInterrupt:
         pass
     finally:
+        start_durak = interface.should_start_durak  # Store this before cleanup
         tui.cleanup()
+        if start_durak:  # Start durak after cleanup if triggered
+            durak.durak()
 
 if __name__ == "__main__":
     main()

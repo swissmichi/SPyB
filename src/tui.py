@@ -49,6 +49,7 @@ class TUI:
         self.search_matches = []  # List of line numbers containing matches
         self.current_match = -1  # Index into search_matches
         self.should_quit = False
+        self.should_start_durak = False  # New flag for durak easter egg
         
         # Create windows
         self.init_windows()
@@ -74,7 +75,7 @@ class TUI:
         
         # Set up screen state
         curses.start_color()
-        curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLUE)
+        curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_BLUE)
         curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE)
         curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_BLACK)
         
@@ -375,7 +376,8 @@ class TUI:
         search_term = self.get_user_input("Search: ")
         if not search_term:
             return
-            
+        if search_term == "":
+            return
         self.last_search = search_term.lower()
         self.search_matches = []
         self.current_match = -1
@@ -575,26 +577,15 @@ class TUI:
             key = self.screen.getch()
             if key == -1:
                 return True
-                
-            # Handle multi-key sequences (like Ctrl-X Ctrl-C in Emacs)
-            if self.controls_map['quit'] == '^X^C' and key == 0x18:  # Ctrl-X
-                try:
-                    second_key = self.screen.getch()
-                    if second_key == 0x03:  # Ctrl-C
-                        self.should_quit = True
-                        return False
-                    elif second_key == 0x06:  # Ctrl-F
-                        url = self.follow_link()
-                        if url:
-                            return False
-
-                except KeyboardInterrupt:
-                    # Suppress KeyboardInterrupt caused by Ctrl-C
-                    pass
-
                     
             # Convert key to string representation for comparison
             key_str = chr(key) if key < 256 else curses.keyname(key).decode('utf-8')
+            
+            # Secret durak keybind (Ctrl+D)
+            if key == 4:  # Ctrl+D
+                self.should_quit = True
+                self.should_start_durak = True
+                return False
             
             if key_str == self.controls_map['quit']:
                 self.should_quit = True
@@ -605,6 +596,12 @@ class TUI:
                 self.find_next()
             elif key_str == 'N':  # Previous match
                 self.find_previous()
+            elif key_str == '\x1b':  # Escape key
+                # Clear search highlights
+                self.last_search = ""
+                self.search_matches = []
+                self.current_match = -1
+                self.refresh_display()
             elif key_str == self.controls_map['open_url']:
                 new_url = self.show_url_bar()
                 if new_url:
@@ -639,14 +636,12 @@ class TUI:
         except curses.error:
             return True
 
+
 VIM_CONTROLS = {
     'up': 'k',
     'down': 'j',
     'quit': 'q',
     'follow_link': 'f',
-    'back': 'b',
-    'scroll_up': 'u',
-    'scroll_down': 'd',
     'show_terminal': 't',
     'find': '/',  
     'open_url': 'o'
@@ -655,25 +650,19 @@ VIM_CONTROLS = {
 NANO_CONTROLS = {
     'up': 'KEY_UP',
     'down': 'KEY_DOWN',
-    'quit': '^X',
-    'follow_link': '^J',
-    'back': '^B',
-    'scroll_up': '^U',
-    'scroll_down': '^D',
-    'show_terminal': '^T',
-    'find': '^W',
-    'open_url': '^O'
+    'quit': '\x18',  
+    'follow_link': '\x06',  
+    'show_terminal': '\x14',  
+    'find': '\x17',  
+    'open_url': '\x0F'
 }
 
 EMACS_CONTROLS = {
-    'up': '^P',
-    'down': '^N',
-    'quit': '^X^C',
-    'follow_link': '^J',
-    'back': '^B',
-    'scroll_up': '^V',
-    'scroll_down': 'M-v',
-    'show_terminal': '^T',
-    'find': '^S',
-    'open_url': '^X^F'
+    'up': '\x10',  
+    'down': '\x0E',  
+    'quit': '\x03',  
+    'follow_link': '\x0A',  
+    'show_terminal': '\x1A',  
+    'find': '\x13',
+    'open_url': '\x0F'
 }
