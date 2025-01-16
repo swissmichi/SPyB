@@ -4,12 +4,16 @@
 **SPyB** *(**S**imple **Py**thon **B**rowser, pronounced [/ɛs.'paɪ.biː/])* is a simple python-based browser.
 
 ## Installation
+**If you use a Debian based system (i.e. Ubuntu, Linux Mint), you'll first have to install ``python3.12-venv``**
+```bash
+apt install python3.12-venv # You may have to run this through sudo
+```
 
 To install SPyB, run:
 ```bash
 make install
 ```
-This will create a python virtual environment and install all dependencies for you. 
+This will create a python virtual environment and install all dependencies for you. <br>
 
 Afterwards, you can run:
 ```bash
@@ -69,6 +73,7 @@ This program is expected to be able to run on all Linux distributions with Bash 
 
 Currently tested on:
 - **Arch Linux with Bash (Fully working)**
+- **Linux Mint with Bash (Fully working after installing ``python3.12-venv``)**
 - *MacOS with Bash (Requires manual installation)*
 
 ## Configuration
