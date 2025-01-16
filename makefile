@@ -38,8 +38,6 @@ resetenv:
 
 updatelibs:
 	@$(PIP3) install -r $(PYDEPENDS)
-config:
-	@echo "TODO"
 
 configdefaults:
 	@rm $(CONFIG)
