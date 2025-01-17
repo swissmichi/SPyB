@@ -1,7 +1,7 @@
 
 ![The SPyB Logo](etc/logo-spyb.png)
 # Simple Python Browser 24.01
-**SPyB** *(**S**imple **Py**thon **B**rowser, pronounced [/ɛs.'paɪ.biː/])* is a simple python-based browser.
+**SPyB** (***S**imple **Py**thon **B**rowser*, pronounced [/ɛs.'paɪ.biː/]) is a simple python-based browser.
 
 ## Installation
 **If you use a Debian based system (i.e. Ubuntu, Linux Mint), you'll first have to install ``python3.12-venv``**
@@ -84,6 +84,7 @@ Currently tested on:
 | ``terminal_logger_level`` | [see below](#logger-levels) | ``INFO``      |
 | ``file_logger_level`` | [see below](#logger-levels) | ``DEBUG``     |
 | ``controls``          | [Control Mode](#control-modes)| ``vim`` |
+| ``colors``            | ``dark/bright`` | ``dark``    |
 
 ### Logger levels
 

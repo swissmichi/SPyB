@@ -11,6 +11,7 @@ from pathlib import Path
 import logconf
 import fetcher
 import parser
+import app_confvars as confvars
 
 logger = logconf.logger
 
@@ -75,9 +76,14 @@ class TUI:
         
         # Set up screen state
         curses.start_color()
-        curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_BLUE)
-        curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE)
-        curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_BLACK)
+        if confvars.tui_colors.lower() == "bright":
+            curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_BLUE)
+            curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE)
+            curses.init_pair(3, curses.COLOR_GREEN, curses.COLOR_BLACK)
+        else:
+            curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLUE)
+            curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE)
+            curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_BLACK)
         
         # Set window backgrounds
         self.address_bar = address_bar

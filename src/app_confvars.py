@@ -57,3 +57,9 @@ try:
     tui_controls = config["controls"]
 except (KeyError, TypeError):
     tui_controls = defaults["controls"]
+
+# Get color style with fallback
+try:
+    tui_colors = config["colors"]
+except (KeyError, TypeError):
+    tui_colors = defaults["colors"]
