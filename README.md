@@ -79,14 +79,14 @@ Currently tested on:
 - *MacOS with Bash (Requires manual installation)*
 
 ## Configuration
-| Option                | Value         | Default       |
-| --------------------- | ------------- | ------------- |
-| ``max_log_size``      | ``int`` Bytes | ``1048576``   | 
-| ``max_log_backups``   | ``int``       | ``10``        |
-| ``terminal_logger_level`` | [see below](#logger-levels) | ``INFO``      |
-| ``file_logger_level`` | [see below](#logger-levels) | ``DEBUG``     |
-| ``controls``          | [Control Mode](#control-modes)| ``vim`` |
-| ``colors``            | ``dark/bright`` | ``dark``    |
+| Option                        | Value                         | Default       |
+| ----------------------------- | ----------------------------- | ------------- |
+| ``max_log_size``              | ``int`` Bytes                 | ``1048576``   | 
+| ``max_log_backups``           | ``int`` Backups               | ``10``        |
+| ``terminal_logger_level``     | [see below](#logger-levels)   | ``INFO``      |
+| ``file_logger_level``         | [see below](#logger-levels)   | ``DEBUG``     |
+| ``controls``                  | [Control mode](#control-modes)| ``vim``       |
+| ``colors``                    | ``dark/bright``               | ``dark``      |
 
 ### Logger levels
 
