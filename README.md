@@ -29,7 +29,7 @@ If ``make install`` doesn't work for some reason, follow these instructions.
 
 Create a python virtual environment and install all dependencies using this command:
 ```bash
-python3 make venv .venv && source .venv/bin/activate && .venv/bin/pip3 install -r etc/pyDEPENDENCIES.txt
+python3 -m venv .venv && source .venv/bin/activate && .venv/bin/pip3 install -r etc/pyDEPENDENCIES.txt
 ```
 
 Afterwards, create the configuration file.
