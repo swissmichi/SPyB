@@ -666,7 +666,7 @@ NANO_CONTROLS = {
 EMACS_CONTROLS = {
     'up': '\x10',  
     'down': '\x0E',  
-    'quit': '\x03',  
+    'quit': '\x18',  
     'follow_link': '\x0A',  
     'show_terminal': '\x1A',  
     'find': '\x13',

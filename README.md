@@ -60,7 +60,7 @@ You can change the control mode by editing the `controls` value in `etc/config.c
 | Action                | Vim `vim`     | Nano `nano`   | Emacs `emacs` |             
 | --------------------- | ------------- | ------------- | ------------- |
 | Scroll Up/Down        | k/j           | Arrow keys    | ^P/^N         |
-| Quit program          | q             | ^X            | ^C            |
+| Quit program          | q             | ^X            | ^X            |
 | Open URL              | o             | ^O            | ^O            |
 | Follow link           | f             | ^J            | ^J            |
 | Show Terminal         | t             | ^T            | ^T            |
