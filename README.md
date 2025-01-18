@@ -76,6 +76,7 @@ This program is expected to be able to run on all Linux distributions with Bash 
 Currently tested on:
 - **Arch Linux with Bash (Fully working)**
 - **Linux Mint with Bash (Fully working after installing ``python3.12-venv``)**
+- **Android with Bash through Termux (Fully working)**
 - *MacOS with Bash (Requires manual installation)*
 
 ## Configuration
