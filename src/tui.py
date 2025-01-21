@@ -337,6 +337,7 @@ class TUI:
             return None
         elif content == "SSLERR":
             if not self.handle_ssl_error():
+                self.current_url = ""
                 return None
             # Retry with SSL verification disabled
             content = fetcher.fetcher(url, verify=False)
